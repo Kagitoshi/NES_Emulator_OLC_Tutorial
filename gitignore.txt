@@ -1,0 +1,4 @@
+cmakeFiles-v1-5b6974cf0c824c7f03bc.json
+**/cmake-build-debug/*
+**/.idea/*
+CMakeLists.txt

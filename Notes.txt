@@ -1,0 +1,8 @@
+Header Files:
+At first I was bit confused why was he placing "public:"
+before each thing he placed in the header file, looking at it now
+I can see it makes it a lot easier to group similar and/or things
+that belong together. For example the read and write functions
+in the "Bus" class are grouped together and the cpu, which is a device
+on the bus is within its own "public:" group in the same header file.
+

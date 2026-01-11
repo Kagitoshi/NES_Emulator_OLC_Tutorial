@@ -39,7 +39,7 @@ olc6502::olc6502()
                     { "BEQ", &a::BEQ, &a::REL, 2 },{ "SBC", &a::SBC, &a::IZY, 5 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 8 },{ "???", &a::NOP, &a::IMP, 4 },{ "SBC", &a::SBC, &a::ZPX, 4 },{ "INC", &a::INC, &a::ZPX, 6 },{ "???", &a::XXX, &a::IMP, 6 },{ "SED", &a::SED, &a::IMP, 2 },{ "SBC", &a::SBC, &a::ABY, 4 },{ "NOP", &a::NOP, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 7 },{ "???", &a::NOP, &a::IMP, 4 },{ "SBC", &a::SBC, &a::ABX, 4 },{ "INC", &a::INC, &a::ABX, 7 },{ "???", &a::XXX, &a::IMP, 7 },
             };
 
-    // Lastly, thanks OLC's wife for double-checking this. I know it wasn't easy for him, esspecially since it took him
+    // Lastly, thanks OLC's wife for double-checking this. I know it wasn't easy for him, especially since it took him
     // two days and he said he made a mistake which got her involved.
     // This looks pretty daunting, so I am sure it wasn't easy for her as well.
 }
@@ -50,12 +50,12 @@ olc6502::~olc6502()
 
 uint8_t olc6502::read(uint16_t addr)
 {
-    return bus -> read(addr, false);
+    return bus -> cpuRead(addr, false);
 }
 
 void olc6502::write(uint16_t addr, uint8_t data)
 {
-    bus -> write(addr, data);
+    bus -> cpuWrite(addr, data);
 }
 
 void olc6502::clock()
@@ -192,7 +192,7 @@ uint8_t olc6502::IND()
     uint16_t ptr_hi = read(pc);
     pc++;
 
-    uint16_t ptr = (ptr_hi << 8) | ptr;
+    uint16_t ptr = (ptr_hi << 8) | ptr_lo;
 
     if(ptr_lo == 0x00FF) // Simulate page boundary hardware bug
     {
@@ -1251,7 +1251,7 @@ std::map<uint16_t, std::string> olc6502::disassemble(uint16_t nStart, uint16_t n
         std::string sInst = "$" + hex(addr, 4) + ": ";
 
         // Read instruction, and get its readable name
-        uint8_t opcode = bus->read(addr, true); addr++;
+        uint8_t opcode = bus->cpuRead(addr, true); addr++;
         sInst += lookup[opcode].name + " ";
 
         // Get oprands from desired locations, and form the
@@ -1265,67 +1265,67 @@ std::map<uint16_t, std::string> olc6502::disassemble(uint16_t nStart, uint16_t n
         }
         else if (lookup[opcode].addrmode == &olc6502::IMM)
         {
-            value = bus->read(addr, true); addr++;
+            value = bus->cpuRead(addr, true); addr++;
             sInst += "#$" + hex(value, 2) + " {IMM}";
         }
         else if (lookup[opcode].addrmode == &olc6502::ZP0)
         {
-            lo = bus->read(addr, true); addr++;
+            lo = bus->cpuRead(addr, true); addr++;
             hi = 0x00;
             sInst += "$" + hex(lo, 2) + " {ZP0}";
         }
         else if (lookup[opcode].addrmode == &olc6502::ZPX)
         {
-            lo = bus->read(addr, true); addr++;
+            lo = bus->cpuRead(addr, true); addr++;
             hi = 0x00;
             sInst += "$" + hex(lo, 2) + ", X {ZPX}";
         }
         else if (lookup[opcode].addrmode == &olc6502::ZPY)
         {
-            lo = bus->read(addr, true); addr++;
+            lo = bus->cpuRead(addr, true); addr++;
             hi = 0x00;
             sInst += "$" + hex(lo, 2) + ", Y {ZPY}";
         }
         else if (lookup[opcode].addrmode == &olc6502::IZX)
         {
-            lo = bus->read(addr, true); addr++;
+            lo = bus->cpuRead(addr, true); addr++;
             hi = 0x00;
             sInst += "($" + hex(lo, 2) + ", X) {IZX}";
         }
         else if (lookup[opcode].addrmode == &olc6502::IZY)
         {
-            lo = bus->read(addr, true); addr++;
+            lo = bus->cpuRead(addr, true); addr++;
             hi = 0x00;
             sInst += "($" + hex(lo, 2) + "), Y {IZY}";
         }
         else if (lookup[opcode].addrmode == &olc6502::ABS)
         {
-            lo = bus->read(addr, true); addr++;
-            hi = bus->read(addr, true); addr++;
+            lo = bus->cpuRead(addr, true); addr++;
+            hi = bus->cpuRead(addr, true); addr++;
             sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + " {ABS}";
         }
         else if (lookup[opcode].addrmode == &olc6502::ABX)
         {
-            lo = bus->read(addr, true); addr++;
-            hi = bus->read(addr, true); addr++;
+            lo = bus->cpuRead(addr, true); addr++;
+            hi = bus->cpuRead(addr, true); addr++;
             sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + ", X {ABX}";
         }
         else if (lookup[opcode].addrmode == &olc6502::ABY)
         {
-            lo = bus->read(addr, true); addr++;
-            hi = bus->read(addr, true); addr++;
+            lo = bus->cpuRead(addr, true); addr++;
+            hi = bus->cpuRead(addr, true); addr++;
             sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + ", Y {ABY}";
         }
         else if (lookup[opcode].addrmode == &olc6502::IND)
         {
-            lo = bus->read(addr, true); addr++;
-            hi = bus->read(addr, true); addr++;
+            lo = bus->cpuRead(addr, true); addr++;
+            hi = bus->cpuRead(addr, true); addr++;
             sInst += "($" + hex((uint16_t)(hi << 8) | lo, 4) + ") {IND}";
         }
         else if (lookup[opcode].addrmode == &olc6502::REL)
         {
-            value = bus->read(addr, true); addr++;
-            sInst += "$" + hex(value, 2) + " [$" + hex(addr + value, 4) + "] {REL}";
+            value = bus->cpuRead(addr, true); addr++;
+            sInst += "$" + hex(value, 2) + " [$" + hex(addr + (int8_t)value, 4) + "] {REL}";
         }
 
         // Add the formed string to a std::map, using the instruction's

@@ -72,20 +72,20 @@ olc2C02::olc2C02()
 	palScreen[0x3E] = olc::Pixel(0, 0, 0);
 	palScreen[0x3F] = olc::Pixel(0, 0, 0);
 
-	// sprScreen = new olc::Sprite(256, 240);
-	// sprNameTable[0] = new olc::Sprite(256, 240);
-	// sprNameTable[1] = new olc::Sprite(256, 240);
-	// sprPatternTable[0] = new olc::Sprite(128, 128);
-	// sprPatternTable[1] = new olc::Sprite(128, 128);
+	sprScreen = new olc::Sprite(256, 240);
+	sprNameTable[0] = new olc::Sprite(256, 240);
+	sprNameTable[1] = new olc::Sprite(256, 240);
+	sprPatternTable[0] = new olc::Sprite(128, 128);
+	sprPatternTable[1] = new olc::Sprite(128, 128);
 }
 
 olc2C02::~olc2C02()
 {
-	// delete sprScreen;
-	// delete sprNameTable[0];
-	// delete sprNameTable[1];
-	// delete sprPatternTable[0];
-	// delete sprPatternTable[1];
+	delete sprScreen;
+	delete sprNameTable[0];
+	delete sprNameTable[1];
+	delete sprPatternTable[0];
+	delete sprPatternTable[1];
 }
 
 uint8_t olc2C02::cpuRead(uint16_t addr, bool readOnly)
@@ -151,6 +151,18 @@ uint8_t olc2C02::ppuRead(uint16_t addr, bool readOnly)
     {
 
     }
+	else if (addr >= 0x0000 && addr <= 0x1FFF)
+	{
+
+	}
+	else if (addr >= 0x2000 && addr <= 0x3EFF)
+	{
+
+	}
+	else if (addr >= 0x3F00 && addr <= 0x3FFF)
+	{
+
+	}
 
     return data;
 }
@@ -175,9 +187,43 @@ olc::Sprite& olc2C02::GetNameTable(uint8_t i)
     return sprNameTable[i];
 }
 
-olc::Sprite& olc2C02::GetPatternTable(uint8_t i)
+olc::Sprite& olc2C02::GetPatternTable(uint8_t i, uint8_t palette)
 {
+	for (uint16_t nTileY = 0; nTileY < 16; nTileY++)
+	{
+		for (uint16_t nTileX = 0; nTileX < 16; nTileX++)
+		{
+			uint16_t nOffset = nTileY * 256 + nTileX * 16;
+
+			for (uint16_t row = 0; row < 8; row++)
+			{
+				uint8_t tile_lsb = ppuRead(i * 0x1000 + nOffset + row + 0);
+				uint8_t tile_msb = ppuRead(i * 0x1000 + nOffset + row + 0);
+
+
+				for (uint16_t col = 0; col < 8; col++)
+				{
+					uint8_t pixel = ((tile_lsb & 0x01) + (tile_msb & 0x01));
+					tile_lsb >>= 1;
+					tile_msb >>= 1;
+
+					sprPatternTable[i].SetPixel
+					(
+						nTileX * 8 + (7 - col),
+						nTileY * 8 + row,
+						GetColourFromPaletteRam(palette, pixel)
+					);
+				}
+			}
+		}
+	}
+
     return sprPatternTable[i];
+}
+
+olc::Pixel& olc2C02::GetColourFromPaletteRam(uint8_t palette, uint8_t pixel)
+{
+	return palScreen[ppuRead(0x3F00 + (palette << 2) + pixel)];
 }
 
 void olc2C02::ConnectCartridge(const std::shared_ptr<Cartridge> &cartridge)
